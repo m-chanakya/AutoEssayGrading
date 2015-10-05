@@ -1,0 +1,4 @@
+nltk==3.0.5
+scikit-learn==0.16.1
+six==1.9.0
+textmining==1.0
