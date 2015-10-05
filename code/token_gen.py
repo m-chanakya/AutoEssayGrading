@@ -64,7 +64,15 @@ def tokenize(data, stops = []):
 	for ner in NER:
 		final_tokens = [x for x in final_tokens if not x.startswith(ner)]
 
-	return (final_tokens, puncs)
+	temp = []
+	for each in final_tokens:
+		try:
+			each.encode('utf8')
+			temp.append(each)
+		except:
+			pass
+
+	return (temp, puncs)
 
 if __name__ == "__main__":
 	f = open(sys.argv[1], 'r')

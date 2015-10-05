@@ -3,6 +3,9 @@ import nltk
 import enchant
 
 Dict = enchant.Dict("en_US")
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 class files:
 
@@ -83,6 +86,7 @@ class files:
 		self.avg_word_len = float(self.avg_word_len) / float(self.word_count)
 
 	def set_pos_features(self):
+		print self.essay_id
 		"""
 		Sets tag related features
 		===============================================
@@ -95,7 +99,6 @@ class files:
 		"""
 
 		self.pos_tags = nltk.pos_tag(self.token_arr)
-		
 		self.verb_count = 0
 		self.noun_count = 0
 		self.adj_count = 0
@@ -161,7 +164,7 @@ def get_list():
 	==================================
 	"""
 
-	fo = open('../data/code_test.tsv')
+	fo = open('../data/training_set.tsv')
 	lines = fo.readlines()
 	fo.close()
 
@@ -170,7 +173,6 @@ def get_list():
 	for each in lines:
 		send_obj = files(each.split('\n')[0].split('\t'))
 		send_obj.set_word_count(5)
-		send_obj.set_pos_features()
 		send_obj.set_pos_features()
 		send_obj.set_punctuation_features()
 		send_obj.set_vectors()
