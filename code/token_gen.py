@@ -59,11 +59,12 @@ def tokenize(data, stops = []):
 			i += 1
 
 	final_tokens = [x for x in final_tokens if x]
+	puncs = [x for x in final_tokens if x in PUNCTUATION]
 	final_tokens = [x for x in final_tokens if x not in PUNCTUATION]
 	for ner in NER:
 		final_tokens = [x for x in final_tokens if not x.startswith(ner)]
 
-	return final_tokens
+	return (final_tokens, puncs)
 
 if __name__ == "__main__":
 	f = open(sys.argv[1], 'r')

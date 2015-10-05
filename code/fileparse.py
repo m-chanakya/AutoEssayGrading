@@ -44,7 +44,7 @@ class files:
 		self.r3_t5 = arr[26]
 		self.r3_t6 = arr[27]
 
-		self.token_arr = token_gen.tokenize([self.essay])
+		self.token_arr, self.punc_arr = token_gen.tokenize([self.essay])
 
 	def set_word_count(self, min_len):
 		"""
@@ -129,6 +129,26 @@ class files:
 		self.punc_count = 0
 		self.quo_count = 0
 
+		for each in self.punc_arr:
+			self.punc_count += 1
+			if each == ',':
+				self.comma_count += 1
+			elif each == '.':
+				self.sen_count += 1
+			elif each == '"':
+				self.quo_count += 1
+
+	def set_vectors(self):
+		"""
+		Initalises the vector of an object
+		"""
+
+		self.vector = [self.word_count, self.long_word_count, self.avg_word_len, \
+				self.lex_diversity, self.spell_errors, self.verb_count, \
+				self.noun_count, self.adj_count, self.adv_count, \
+				self.comma_count, self.sen_count, self.punc_count, \
+				self.quo_count, float(self.d1_score)]
+
 
 def get_list():
 	"""
@@ -146,12 +166,14 @@ def get_list():
 	fo.close()
 
 	obj_arr = []
+	vec_arr = []
 	for each in lines:
 		send_obj = files(each.split('\n')[0].split('\t'))
 		send_obj.set_word_count(5)
 		send_obj.set_pos_features()
 		send_obj.set_pos_features()
 		send_obj.set_punctuation_features()
+		send_obj.set_vectors()
 		obj_arr.append(send_obj)
 
 	return obj_arr
@@ -160,3 +182,4 @@ if __name__ == "__main__":
 	arr = get_list()
 	print arr[0].pos_tags
 	print arr[0].verb_count
+	print arr[0].vector
