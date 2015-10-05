@@ -12,8 +12,12 @@ Dict = enchant.Dict("en_US")
 
 def num_spell_errors(essay):
 	errors = 0
-	tokens = token_gen(essay.essay)
+	tokens = token_gen.tokenize([essay.essay])
 	for each in tokens:
-		if not Dict.check(each):
-			errors += 1
+		if len(each) >= 1:
+			try:
+				if not Dict.check(each.encode('utf8')):
+					errors += 1
+			except:
+			  	errors += 1
 	return errors
