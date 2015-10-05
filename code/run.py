@@ -10,4 +10,4 @@ import speller
 if __name__=="__main__":
 	docs_list = docR.get_list()
 	for doc in docs_list:
-		print speller.num_spell_errors(doc)
+		speller.num_spell_errors(doc)

@@ -20,4 +20,4 @@ def num_spell_errors(essay):
 					errors += 1
 			except:
 			  	errors += 1
-	return errors
+	essay.misspellings = errors
