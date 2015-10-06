@@ -2,6 +2,8 @@ import token_gen
 import nltk
 import enchant
 import os
+from progress.bar import Bar
+from time import sleep
 
 Dict = enchant.Dict("en_US")
 import sys
@@ -90,7 +92,7 @@ class files:
 		self.avg_word_len = float(self.avg_word_len) / float(self.word_count)
 
 	def set_pos_features(self):
-		print self.essay_id
+#print self.essay_id
 		"""
 		Sets tag related features
 		===============================================
@@ -174,7 +176,8 @@ def get_list(filename):
 	total = len(lines)
 	obj_arr = []
 	vec_arr = []
-	flag = 0
+	bar = Bar("Processing", max=total, suffix='%(percent)d%% | %(index)d of %(max)d | %(eta)d seconds remaining.')
+	num = 0
 	for each in lines:
 		send_obj = files(each.split('\n')[0].split('\t'))
 		send_obj.set_word_count(5)
@@ -182,11 +185,8 @@ def get_list(filename):
 		send_obj.set_punctuation_features()
 		send_obj.set_vectors()
 		obj_arr.append(send_obj)
-		#flag += 1
-		#for i in xrange(0, flag):
-		#	print '*',
-		#print '\r',
-		#print "("+str(send_obj.essay_id)+"/"+str(total)+" done)",
+		bar.next()
+	bar.finish()
 	return obj_arr
 
 if __name__ == "__main__":

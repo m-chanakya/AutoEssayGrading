@@ -13,6 +13,7 @@ import numpy as np
 from metrics import get_average_kappa as kappa
 
 def begin_testing(filename, classifier):
+	print "\nLoading the test data..."
 	test_docs = docR.get_list(filename)
 	data = []
 	target = []
@@ -33,6 +34,7 @@ if __name__=="__main__":
 	print "\n"
 	print "="*50
 	if sys.argv[1] == "-n":
+		print "\nTraining the model..."
 		docs_list = docR.get_list(sys.argv[2])
 		classifier = svm.SVR()
 		data = []
@@ -50,7 +52,7 @@ if __name__=="__main__":
 		ofp = open(sys.argv[4], 'w')
 		ofp.write(string)
 		ofp.close()
-		print "Model and data dumped successfully."
+		print "\nModel trained and data dumped successfully."
 
 	elif sys.argv[1] == "-o":
 		classifier = joblib.load(sys.argv[3])
@@ -59,6 +61,6 @@ if __name__=="__main__":
 		saved_data = pickle.loads(saved_data)
 		data = np.array(saved_data[:-1])
 		target = np.array([saved_data[-1]])
-		print "Model and data loaded successfully."
+		print "\nModel and data loaded successfully."
 	if sys.argv[5] == '-t':	
 		begin_testing(sys.argv[6], classifier)	
