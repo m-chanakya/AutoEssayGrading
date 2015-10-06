@@ -13,7 +13,7 @@ def get_average_kappa(arr_act, arr_pred):
 	for i in xrange(0, total):
 		kappa_val += met.kappa([arr_act[i]], [arr_pred[i]], \
 					'quadratic')
-		print arr_act[i], '-', arr_pred[i]
+#		print arr_act[i], '-', arr_pred[i]
 
 	kappa_val  = float(kappa_val) / float(total)
 
