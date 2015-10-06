@@ -1,12 +1,16 @@
 import token_gen
 import nltk
 import enchant
+import os
 
 Dict = enchant.Dict("en_US")
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+
+uni_dict = {'1' : 12.0, '2' : 12.0, '3' : 6.0, '4' : 6.0, \
+		'5' : 8.0, '6' : 8.0, '7' : 30.0, '8' : 60.0}
 class files:
 
 	def __init__(self, arr):
@@ -150,10 +154,10 @@ class files:
 				self.lex_diversity, self.spell_errors, self.verb_count, \
 				self.noun_count, self.adj_count, self.adv_count, \
 				self.comma_count, self.sen_count, self.punc_count, \
-				self.quo_count, float(self.d1_score)]
+				self.quo_count, float(self.d1_score) / uni_dict[self.essay_set]]
 
 
-def get_list():
+def get_list(filename):
 	"""
 	Creates an array of objects out of 
 	input training file
@@ -164,12 +168,13 @@ def get_list():
 	==================================
 	"""
 
-	fo = open('../data/training_set.tsv')
+	fo = open(filename)
 	lines = fo.readlines()
 	fo.close()
-
+	total = len(lines)
 	obj_arr = []
 	vec_arr = []
+	flag = 0
 	for each in lines:
 		send_obj = files(each.split('\n')[0].split('\t'))
 		send_obj.set_word_count(5)
@@ -177,7 +182,11 @@ def get_list():
 		send_obj.set_punctuation_features()
 		send_obj.set_vectors()
 		obj_arr.append(send_obj)
-
+		#flag += 1
+		#for i in xrange(0, flag):
+		#	print '*',
+		#print '\r',
+		#print "("+str(send_obj.essay_id)+"/"+str(total)+" done)",
 	return obj_arr
 
 if __name__ == "__main__":
