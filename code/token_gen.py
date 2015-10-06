@@ -38,7 +38,7 @@ def tokenize(data, stops = []):
 	final_tokens = []
 	i=0
 	while i < len(tokenized):
-		if i < len(tokenized) - 1 and tokenized[i+1] == "n't" or (tokenized[i] in startings and tokenized[i+1] in endings):
+		if i < len(tokenized) - 1 and (tokenized[i+1] == "n't" or (tokenized[i] in startings and tokenized[i+1] in endings)):
 			new_token = tokenized[i]+tokenized[i+1]
 			final_tokens.append(new_token)
 			i += 2
