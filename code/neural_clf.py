@@ -6,7 +6,7 @@ import random
 
 #GLOBALS
 nof_hidden_units = 4
-nof_op_units = 2
+nof_op_units = 1
 nof_ip_units = 64
 eta = 1
 threshold = 0.01
@@ -63,6 +63,7 @@ def init_weights():
 
 def train(inputs, t):
 	global hidden, output
+	init_weights()
 	counter = 0
 	while True and counter <= 10000:
 		counter += 1
@@ -143,7 +144,6 @@ def main():
 			for j in xrange(len(inputs)):
 				inputs[j][i] = 1.0*(inputs[j][i] - sum)/variance
 
-	init_weights()
 	train(inputs, t)
 	print hidden
 	print output
