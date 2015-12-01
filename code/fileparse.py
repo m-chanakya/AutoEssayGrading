@@ -159,6 +159,21 @@ class files:
 				self.quo_count, float(self.d1_score) / uni_dict[self.essay_set]]
 
 
+	def spell_correct(self):
+		"""
+		Corrects the spellings of any word
+		in essay if found incorrect
+		"""
+		this_essay = []
+		essay = self.essay.split(' ')
+		for word in essay:
+			if Dict.check(word.encode('utf8')) == False:
+				this_essay.append(Dict.suggest(word.encode('utf8'))[0])
+			else:
+				this_essay.append(word.encode('utf8'))
+		self.essay = " ".join(this_essay)
+
+
 def get_list(filename):
 	"""
 	Creates an array of objects out of 
