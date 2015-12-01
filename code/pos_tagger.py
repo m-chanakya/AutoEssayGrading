@@ -242,6 +242,7 @@ if __name__ == "__main__":
 
 	if sys.argv[1] == '-t':
 		f = open(sys.argv[2], 'r')
+		print "Creating model..."
 		data = f.read()
 		sentences = preprocess(data, transition, emission, bigram, unigram, wgram, V)
 		
@@ -249,6 +250,7 @@ if __name__ == "__main__":
 		find_emision(sentences, transition, emission, bigram, unigram, wgram, V)
 		
 		save_model(sys.argv[2]+".POS.model", transition, emission, bigram, unigram, wgram, V)
+		print "Model created. "
 
 	elif sys.argv[1] == '-m':
 		print "Loading model..."
