@@ -2,6 +2,7 @@ import token_gen
 import nltk
 import enchant
 import os
+from text_rank import get_key_phrases
 from progress.bar import Bar
 from time import sleep
 
@@ -173,6 +174,12 @@ class files:
 				this_essay.append(word.encode('utf8'))
 		self.essay = " ".join(this_essay)
 
+	def get_phrases(self):
+		"""
+		Gets the phrases corresponding to a particular essay"
+		"""
+		self.phrases, self.summary = get_key_phrases(self.essay)
+
 
 def get_list(filename):
 	"""
@@ -199,6 +206,7 @@ def get_list(filename):
 		send_obj.set_pos_features()
 		send_obj.set_punctuation_features()
 		send_obj.set_vectors()
+		send_obj.get_phrases()
 		obj_arr.append(send_obj)
 		bar.next()
 	bar.finish()
