@@ -1,20 +1,14 @@
 #! /usr/bin/python
 
 import sys
+import pickle
+import nltk
 
+# TAG_SET = ['$$START', '$START', '$END', 'NN', 'NST', 'NNP', 'PRP', 'DEM', 'VM', 'VAUX', 'JJ', 'RB', 'PSP', 'RP', 'CC', 'WQ', 'QF', 'QC', 'QO','CL', 'INTF', 'INJ', 'NEG', 'UT', 'SYM', 'XC', 'RDP', 'ECH', 'UNK']
+TAG_SET = ['$$START', '$START', '$END', 'PRP$', 'VBG', 'VBD', 'VBN', 'VBP', 'WDT', 'JJ', 'WP', 'VBZ', 'DT', 'RP', '$', 'NN', 'FW', 'POS', 'TO', 'LS', 'RB', 'NNS', 'NNP', 'VB', 'WRB', 'CC', 'PDT', 'RBS', 'RBR', 'CD', 'PRP', 'EX', 'IN', 'WP$', 'MD', 'NNPS', 'JJS', 'JJR', 'SYM', 'UH', 'PUNC']
+model = {}
 
-TAG_SET = ['$$START', '$START', '$END', 'NN', 'NST', 'NNP', 'PRP', 'DEM', 'VM', 'VAUX', 'JJ', 'RB', 'PSP', 'RP', 'CC', 'WQ', 'QF', 'QC', 'QO','CL', 'INTF', 'INJ', 'NEG', 'UT', 'SYM', 'XC', 'RDP', 'ECH', 'UNK']
-V = set()
-
-transition = {}
-emission = {}
-
-bigram = {}
-unigram = {}
-wgram = {}
-
-def find_emision(sentences):
-	global emission
+def find_emision(sentences, transition, emission, bigram, unigram, wgram, V):
 	for sentence in sentences:
 		#Emission for first word
 		trigram = ('$START', sentence[0][1], sentence[0][0])
@@ -26,8 +20,7 @@ def find_emision(sentences):
 			emission[trigram] = emission.get(trigram, 0) + 1
 			i += 1
 
-def find_transition(sentences):
-	global transition
+def find_transition(sentences, transition, emission, bigram, unigram, wgram, V):
 	for sentence in sentences:
 		
 		#Transition for first word
@@ -44,7 +37,7 @@ def find_transition(sentences):
 			transition[trigram] = transition.get(trigram, 0) + 1
 			i += 1
 
-def ip_laplace(ngram, type):
+def ip_laplace(ngram, type, transition, emission, bigram, unigram, wgram, V):
 	k = 0.1
 	l1 = 0.1
 	l2 = 0.9
@@ -62,7 +55,7 @@ def ip_laplace(ngram, type):
 	return x1 + x2
 
 
-def viterbi(sentence):
+def viterbi(sentence, transition, emission, bigram, unigram, wgram, V):
 	dp = []
 	tag_seq = []
 
@@ -80,9 +73,9 @@ def viterbi(sentence):
 	#INITIALIZE DP
 	for i in xrange(len(TAG_SET)):
 		tag_gram = ('$$START', '$START', TAG_SET[i])
-		trans = ip_laplace(tag_gram, 0)
+		trans = ip_laplace(tag_gram, 0, transition, emission, bigram, unigram, wgram, V)
 		word_gram = ('$START', TAG_SET[i], sentence[0][0])
-		emit = ip_laplace(word_gram, 1)
+		emit = ip_laplace(word_gram, 1, transition, emission, bigram, unigram, wgram, V)
 		dp[0][1][i] = trans*emit
 
 	#DP
@@ -91,10 +84,10 @@ def viterbi(sentence):
 			for j in xrange(len(TAG_SET)):
 				maximum = -1
 				word_gram = (TAG_SET[j], TAG_SET[k], sentence[p][0])
-				emit = ip_laplace(word_gram, 1)
+				emit = ip_laplace(word_gram, 1, transition, emission, bigram, unigram, wgram, V)
 				for i in xrange(len(TAG_SET)):
 					tag_gram = (TAG_SET[i], TAG_SET[j], TAG_SET[k])
-					trans = ip_laplace(tag_gram, 0)
+					trans = ip_laplace(tag_gram, 0, transition, emission, bigram, unigram, wgram, V)
 					temp = dp[p-1][i][j] * trans
 					if temp >= maximum:
 						maximum = temp
@@ -124,15 +117,14 @@ def viterbi(sentence):
 	final_tags.reverse()
 	return final_tags
 
-def parse(data):
+def parse(data, transition, emission, bigram, unigram, wgram, V):
 	sentences = data.split('\n')
 	sentences = [ ' '.join([each.strip(), '$$_$END']) for each in sentences if each.strip() != '' ]
 	sentences = [ [every.split('_') for every in each.split(' ')] for each in sentences]
 	return sentences
 
-def preprocess(data):
-	global V, bigram, unigram, wgram
-	sentences = parse(data)
+def preprocess(data, transition, emission, bigram, unigram, wgram, V):
+	sentences = parse(data, transition, emission, bigram, unigram, wgram, V)
 	for sentence in sentences:
 		for word in sentence:
 			V.add(word[0])
@@ -163,38 +155,110 @@ def preprocess(data):
 
 	return sentences
 
+def load_model(filename):
+	f = open(filename, 'r')
+	model = pickle.load(f)
+	return model
+
+def save_model(filename, transition, emission, bigram, unigram, wgram, V):
+	f = open(filename, 'w')
+	model = {"t":transition, "e":emission, "b":bigram, "u":unigram, "w":wgram, "v":V}
+	pickle.dump(model, f)
+
+def pos_tag(sent):
+	global model
+	if (len(model.keys()) == 0):
+		model = load_model("POS_MODEL")
+	transition = model["t"]
+	emission = model["e"]
+	bigram = model["b"]
+	unigram = model["u"]
+	wgram = model["w"]
+	V = model["v"]
+	all_data = "\n".join(nltk.tokenize.sent_tokenize(sent))
+	test_sents = parse(all_data, transition, emission, bigram, unigram, wgram, V)
+	results = []
+	for sent in test_sents:
+		results.append(viterbi(sent, transition, emission, bigram, unigram, wgram, V)[2:-1])
+	return results
+
+def train(filename):
+	f = open(filename, 'r')
+	data = f.read()
+	V = set()
+
+	transition = {}
+	emission = {}
+
+	bigram = {}
+	unigram = {}
+	wgram = {}
+	sentences = preprocess(data, transition, emission, bigram, unigram, wgram, V)
+	
+	find_transition(sentences, transition, emission, bigram, unigram, wgram, V)
+	find_emision(sentences, transition, emission, bigram, unigram, wgram, V)
+	
+	save_model("POS_MODEL", transition, emission, bigram, unigram, wgram, V)
+
 if __name__ == "__main__":
-	if len(sys.argv) != 3:
-		'Usage: python hmm.py train.data test.data'
+	if len(sys.argv)<3:
+		print 'Usage: python pos_tagger.py train.data test.data'
 		sys.exit(0)
 
-	f = open(sys.argv[1], 'r')
-	data = f.read()
-	sentences = preprocess(data)
-	
-	find_transition(sentences)
-	find_emision(sentences)
+	V = set()
 
-	f1 = open(sys.argv[2], 'r')
+	transition = {}
+	emission = {}
+
+	bigram = {}
+	unigram = {}
+	wgram = {}
+
+	if sys.argv[1] == '-t':
+		f = open(sys.argv[2], 'r')
+		data = f.read()
+		sentences = preprocess(data, transition, emission, bigram, unigram, wgram, V)
+		
+		find_transition(sentences, transition, emission, bigram, unigram, wgram, V)
+		find_emision(sentences, transition, emission, bigram, unigram, wgram, V)
+		
+		save_model(sys.argv[2]+".POS.model", transition, emission, bigram, unigram, wgram, V)
+
+	elif sys.argv[1] == '-m':
+		print "Loading model..."
+		model = load_model(sys.argv[2])
+		transition = model["t"]
+		emission = model["e"]
+		bigram = model["b"]
+		unigram = model["u"]
+		wgram = model["w"]
+		V = model["v"]
+		print "Model loaded."
+		
+	print "Running..."
+	f1 = open(sys.argv[3], 'r')
 	test_data = f1.read()
-	test_sentences = parse(test_data)
+	test_sentences = parse(test_data, transition, emission, bigram, unigram, wgram, V)
 
 
 	sent_accuracy = 0
 	correct_tokens = 0
 	total_tokens = 0
 	avg = 0
+	count = 0
 	for sent in test_sentences:
+		print "#"+str(count)
+		count += 1
 		token_accuracy = 0
-		result = viterbi(sent)[2:]
+		result = viterbi(sent, transition, emission, bigram, unigram, wgram, V)[2:]
 		answer = [word[1] for word in sent]
 		if result == answer:
 			sent_accuracy += 1
 		else:
-			pass
-			# print "OURS", result
-			# print "REAL", answer
-			# print
+			# pass
+			print "OURS", result
+			print "REAL", answer
+			print
 		total_tokens += len(result)
 		for i in xrange(len(result)):
 			if result[i] == answer[i]:
@@ -209,4 +273,3 @@ if __name__ == "__main__":
 	print "Sentence accuracy : ", 1.0*sent_accuracy/len(test_sentences)
 	print "Correct tags/sent accuracy : ", 1.0*avg/len(test_sentences)
 	print "Tag accuracy : ", 1.0*correct_tokens/total_tokens
-	

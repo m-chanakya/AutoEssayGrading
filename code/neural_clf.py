@@ -14,39 +14,6 @@ threshold = 0.01
 hidden = []
 output = []
 
-def preprocess(file):
-	f = open(file, 'r')
-	data = f.read().split('\n')
-	final = {}
-	temp = ''
-	for each in data:
-		if len(each) == 2:
-			if (int(each[1]) == 0 or int(each[1]) == 7):
-				final[str(temp)] = each[1]
-			temp = ''
-		else:
-			temp += each + ','
-	data = []
-	for each in final.keys():
-		temp = each.split(',')
-		temp.pop()
-		ans = ''
-		i=0
-		while i < 32:
-			j=0
-			while j < 32:
-				s = 0.0
-				for a in xrange(4):
-					for b in xrange(4):
-						s += int(temp[i+a][j+b])
-				s /= 16.0
-				ans += str(s) + ','
-				j += 4
-			i += 4
-		ans += str(final[each])
-		data.append(ans)
-	return data
-
 def activation(x):
 	if (x<-5):
 		x = -5
@@ -151,15 +118,6 @@ def train(inputs, t):
 			break
 	
 
-def accuracy(z, t):
-	z = [ [1, 0] if x[0]>x[1] else [0, 1] for x in z ]
-	count = 0
-	total = len(z)
-	for i in xrange(total):
-		if z[i] == t[i]:
-			count += 1
-	return 1.0*count/total
-
 def main():
 	if len(sys.argv) != 2:
 		print "Usage : python ann.py <data-file>"
@@ -212,7 +170,7 @@ def main():
 				inputs[j][i] = 1.0*(inputs[j][i] - sum)/variance
 	
 	z = forward(inputs)
-	print accuracy(z, t)
+	# print accuracy(z, t)
 	
 
 if __name__ == "__main__":
