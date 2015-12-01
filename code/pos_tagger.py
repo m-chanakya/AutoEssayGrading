@@ -3,10 +3,14 @@
 import sys
 import pickle
 import nltk
+import thread
+# from threading import Thread
+from multiprocessing import Process, Queue
 
 # TAG_SET = ['$$START', '$START', '$END', 'NN', 'NST', 'NNP', 'PRP', 'DEM', 'VM', 'VAUX', 'JJ', 'RB', 'PSP', 'RP', 'CC', 'WQ', 'QF', 'QC', 'QO','CL', 'INTF', 'INJ', 'NEG', 'UT', 'SYM', 'XC', 'RDP', 'ECH', 'UNK']
 TAG_SET = ['$$START', '$START', '$END', 'PRP$', 'VBG', 'VBD', 'VBN', 'VBP', 'WDT', 'JJ', 'WP', 'VBZ', 'DT', 'RP', '$', 'NN', 'FW', 'POS', 'TO', 'LS', 'RB', 'NNS', 'NNP', 'VB', 'WRB', 'CC', 'PDT', 'RBS', 'RBR', 'CD', 'PRP', 'EX', 'IN', 'WP$', 'MD', 'NNPS', 'JJS', 'JJR', 'SYM', 'UH', 'PUNC']
 model = {}
+results = {}
 
 def find_emision(sentences, transition, emission, bigram, unigram, wgram, V):
 	for sentence in sentences:
@@ -55,10 +59,10 @@ def ip_laplace(ngram, type, transition, emission, bigram, unigram, wgram, V):
 	return x1 + x2
 
 
-def viterbi(sentence, transition, emission, bigram, unigram, wgram, V):
+def viterbi(q, count, sentence, transition, emission, bigram, unigram, wgram, V):
 	dp = []
 	tag_seq = []
-
+	global results
 	#INITIALIZE DATA STRUCT
 	for i in xrange(len(sentence)):
 		dp.append([])
@@ -115,6 +119,8 @@ def viterbi(sentence, transition, emission, bigram, unigram, wgram, V):
 		final_tags.append(TAG_SET[next])
 		p -= 1
 	final_tags.reverse()
+	results[count] = final_tags[2:]
+	q.put(final_tags)
 	return final_tags
 
 def parse(data, transition, emission, bigram, unigram, wgram, V):
@@ -178,8 +184,28 @@ def pos_tag(sent):
 	all_data = "\n".join(nltk.tokenize.sent_tokenize(sent))
 	test_sents = parse(all_data, transition, emission, bigram, unigram, wgram, V)
 	results = []
+	count = 0
+	q = Queue()
+	threads = []
 	for sent in test_sents:
-		results.append(viterbi(sent, transition, emission, bigram, unigram, wgram, V)[2:-1])
+		count += 1
+		t1 = Process(target=viterbi, args=(q, count, sent, transition, emission, bigram, unigram, wgram, V))
+		t1.start()
+		threads.append(t1)
+		counter = 0
+		if count % 4 == 0:
+			for each in threads:
+				counter +=1
+				print counter
+				each.join()
+			threads = []
+
+	for each in threads:
+		counter +=1
+		each.join()
+		threads = []
+	while q.empty() != True:
+		results.append(q.get()[2:-1])
 	return results
 
 def train(filename):
@@ -240,36 +266,59 @@ if __name__ == "__main__":
 	test_data = f1.read()
 	test_sentences = parse(test_data, transition, emission, bigram, unigram, wgram, V)
 
-
 	sent_accuracy = 0
 	correct_tokens = 0
 	total_tokens = 0
 	avg = 0
 	count = 0
+	results = {}
+	threads = []
+	counter = 0
+	q = Queue()
 	for sent in test_sentences:
 		print "#"+str(count)
 		count += 1
 		token_accuracy = 0
-		result = viterbi(sent, transition, emission, bigram, unigram, wgram, V)[2:]
-		answer = [word[1] for word in sent]
-		if result == answer:
-			sent_accuracy += 1
-		else:
-			# pass
-			print "OURS", result
-			print "REAL", answer
-			print
-		total_tokens += len(result)
-		for i in xrange(len(result)):
-			if result[i] == answer[i]:
-				correct_tokens += 1
-				token_accuracy += 1
-		avg += 1.0*token_accuracy/len(sent)
+		t1 = Process(target=viterbi, args=(q, count, sent, transition, emission, bigram, unigram, wgram, V))
+		t1.start()
+		threads.append(t1)
+		counter = 0
+		if count % 4 == 0:
+			for each in threads:
+				counter +=1
+				print counter
+				each.join()
+			threads = []
 
-	R1 = 1.0*sent_accuracy/len(test_sentences)
-	R2 = 1.0*correct_tokens/total_tokens
-	R3 = 1.0*avg/len(test_sentences)
+	for each in threads:
+		counter +=1
+		print counter
+		each.join()
+		threads = []
+	while q.empty() != True:
+		print q.get()[2:-1]
+		# result = viterbi()[2:]
+		# print sent, result
+		# print
+		# answer = [word[1] for word in sent]
+		# if result == answer:
+		# 	sent_accuracy += 1
+		# else:
+		# 	pass
+		# 	# print "OURS", result
+		# 	# print "REAL", answer
+		# 	# print
+		# total_tokens += len(result)
+		# for i in xrange(len(result)):
+		# 	if result[i] == answer[i]:
+		# 		correct_tokens += 1
+		# 		token_accuracy += 1
+		# avg += 1.0*token_accuracy/len(sent)
 
-	print "Sentence accuracy : ", 1.0*sent_accuracy/len(test_sentences)
-	print "Correct tags/sent accuracy : ", 1.0*avg/len(test_sentences)
-	print "Tag accuracy : ", 1.0*correct_tokens/total_tokens
+	# R1 = 1.0*sent_accuracy/len(test_sentences)
+	# R2 = 1.0*correct_tokens/total_tokens
+	# R3 = 1.0*avg/len(test_sentences)
+
+	# print "Sentence accuracy : ", 1.0*sent_accuracy/len(test_sentences)
+	# print "Correct tags/sent accuracy : ", 1.0*avg/len(test_sentences)
+	# print "Tag accuracy : ", 1.0*correct_tokens/total_tokens
