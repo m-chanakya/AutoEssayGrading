@@ -1,18 +1,18 @@
 #! /usr/bin/python
 
-import sys
-import math
-import random
+import sys, math, random
+from fileparse import get_list
 
 #GLOBALS
 nof_hidden_units = 4
 nof_op_units = 1
-nof_ip_units = 64
+nof_ip_units = 13
 eta = 1
 threshold = 0.01
 
 hidden = []
 output = []
+
 
 def activation(x):
 	if (x<-5):
@@ -69,6 +69,7 @@ def train(inputs, t):
 		counter += 1
 		#LEARN WEIGHTS
 		for a in xrange(len(inputs)):
+
 			#FORWARD
 			y = []
 			z = []
@@ -118,60 +119,65 @@ def train(inputs, t):
 		if flag:
 			break
 	
+def normalize(data, means, variances):
+	for i in xrange(nof_ip_units):
+		for j in xrange(len(data)):
+			if variances[i]:
+				data[j][i] = 1.0*(data[j][i] - means[i])/variances[i]
+
+def preprocess(train):
+	means = []
+	variances = []
+	for i in xrange(nof_ip_units):
+		sum = 0
+		for j in xrange(len(train)):
+			sum += train[j][i]
+		if sum:
+			sum /= 1.0*len(train)
+			means.append(sum)
+			variance = 0
+			for j in xrange(len(train)):
+				variance += (sum - train[j][i])**2
+			variance /= 1.0*len(train)
+			variance = math.sqrt(variance)
+			variances.append(variance)
+		else:
+			means.append(0)
+			variances.append(0)
+	print means
+	print variances
+	return means, variances
 
 def main():
-	if len(sys.argv) != 2:
-		print "Usage : python ann.py <data-file>"
+	if len(sys.argv) !=3:
+		print "Usage: python neural_net.py <train> <test>"
+		sys.exit(1)
 
-	#TRAINING
-	f = open(sys.argv[1], 'r')
-	data = [each.strip('\n') for each in f.readlines()]
-	#data = [each for each in data if (each.split(',')[-1] == '0' or each.split(',')[-1] == '7')]
-	inputs = [ [float(i) for i in each.split(',')[:-1]] for each in data]
-	t = [ [1, 0] if i == 0 else [0, 1] for i in [float(each.split(',')[-1]) for each in data] ]
+	#READ DATA
+	raw = get_list(sys.argv[1])
+	train_data = [each.vector[:-1] for each in raw]
+	train_ans = [each.vector[-1:] for each in raw]
+	
+	raw = get_list(sys.argv[2])
+	test_data = [each.vector[:-1] for each in raw]
+	test_ans = [each.vector[-1:] for each in raw]
+
+	global nof_ip_units
+	nof_ip_units = len(test_data[0])
 
 	#NORMALIZE DATA
-	for i in xrange(64):
-		sum = 0
-		for j in xrange(len(inputs)):
-			sum += inputs[j][i]
-		if sum:
-			sum /= 1.0*len(inputs)
-			variance = 0
-			for j in xrange(len(inputs)):
-				variance += (sum - inputs[j][i])**2
-			variance /= 1.0*len(inputs)
-			for j in xrange(len(inputs)):
-				inputs[j][i] = 1.0*(inputs[j][i] - sum)/variance
-
-	train(inputs, t)
-	print hidden
-	print output
-
-	#TESTING
-	f = open(sys.argv[2], 'r')
-	data = [each.strip('\n') for each in f.readlines()]
-	#data = [each for each in data if (each.split(',')[-1] == '0' or each.split(',')[-1] == '7')]
-	inputs = [ [float(i) for i in each.split(',')[:-1]] for each in data]
-	t = [ [1, 0] if i == 0 else [0, 1] for i in [float(each.split(',')[-1]) for each in data] ]
-
-	#NORMALIZE DATA
-	for i in xrange(64):
-		sum = 0
-		for j in xrange(len(inputs)):
-			sum += inputs[j][i]
-		if sum:
-			sum /= 1.0*len(inputs)
-			variance = 0
-			for j in xrange(len(inputs)):
-				variance += (sum - inputs[j][i])**2
-			variance /= 1.0*len(inputs)
-			for j in xrange(len(inputs)):
-				inputs[j][i] = 1.0*(inputs[j][i] - sum)/variance
+	means, variances = preprocess(train_data)
+	normalize(train_data, means, variances)
+	normalize(test_data, means, variances)
 	
-	z = forward(inputs)
-	# print accuracy(z, t)
-	
+	#TRAIN
+	train(train_data, train_ans)
+
+	#PREDICT
+	predictions = forward(test_data)
+
+	print test_ans
+	print predictions
 
 if __name__ == "__main__":
 	main()

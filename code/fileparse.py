@@ -11,6 +11,9 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+PUNCTUATION = [ch for ch in """(){}[]<>!?.:;,`'"@#$%^&*+-|=~/\\_"""]
+OTHER = ['``']
+PUNCTUATION.extend(OTHER)
 
 uni_dict = {'1' : 12.0, '2' : 12.0, '3' : 6.0, '4' : 6.0, \
 		'5' : 8.0, '6' : 8.0, '7' : 30.0, '8' : 60.0}
@@ -54,8 +57,11 @@ class files:
 		self.r3_t5 = arr[26]
 		self.r3_t6 = arr[27]
 
-		self.token_arr, self.punc_arr = token_gen.tokenize([self.essay])
+		# self.token_arr = nltk.tokenize.word_tokenize(self.essay)
+		# self.punc_arr = [x for x in self.token_arr if x in PUNCTUATION]
 
+		self.token_arr, self.punc_arr = token_gen.tokenize([self.essay])
+		
 	def set_word_count(self, min_len):
 		"""
 		Sets different count (of words) / spelling related features
@@ -77,20 +83,26 @@ class files:
 		self.spell_errors = 0
 
 		for each in self.token_arr:
+			if len(each) > 1:
+					try:
+						if not Dict.check(each.encode('utf8')):
+							self.spell_errors += 1
+					except:
+						self.spell_errors += 1
+		
+		self.spell_correct()
+
+		for each in self.token_arr:
 			if len(each) > min_len:
 				self.long_word_count += 1
 			if not self.dic.has_key(each):
 				self.dic[each] = 1
 				self.lex_diversity += 1
-			if len(each) > 1:
-				try:
-					if not Dict.check(each.encode('utf8')):
-						self.spell_errors += 1
-				except:
-					self.spell_errors += 1
+			
 			self.avg_word_len += len(each)
 
 		self.avg_word_len = float(self.avg_word_len) / float(self.word_count)
+		
 
 	def set_pos_features(self):
 #print self.essay_id
@@ -166,13 +178,14 @@ class files:
 		in essay if found incorrect
 		"""
 		this_essay = []
-		essay = self.essay.split(' ')
-		for word in essay:
-			if Dict.check(word.encode('utf8')) == False:
-				this_essay.append(Dict.suggest(word.encode('utf8'))[0])
+		for word in self.token_arr:
+			correction = Dict.suggest(word.encode('utf8'))
+			if Dict.check(word.encode('utf8')) == False and len(correction) > 0:
+				this_essay.append(correction[0])
 			else:
 				this_essay.append(word.encode('utf8'))
 		self.essay = " ".join(this_essay)
+		self.token_arr = this_essay
 
 	def get_phrases(self):
 		"""

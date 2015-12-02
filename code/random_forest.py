@@ -2,6 +2,7 @@
 
 import sys, math
 from fileparse import get_list
+from random import shuffle
 
 def calc_mean(l):
 	mean = float(sum(l))/len(l)
@@ -11,7 +12,7 @@ def calc_std_dev(objects):
 
 	l = []
 	for each in objects:
-		l.append(float(each.d1_score))
+		l.append(each.vector[-1])
 	
 	if not l:
 		return 0	
@@ -37,6 +38,7 @@ class Node:
 		self.subset = objects
 		self.children = []
 		self.feature = None
+		self.mean = None
 
 
 	def reduce_entropy(self, feat):
@@ -62,75 +64,133 @@ class Node:
 				(1.0*count/total * calc_std_dev(left) +\
 				1.0*(total-count)/total * calc_std_dev(right))
 
+		return temp, mean
+
 	
 	def find_feature(self):
 		
 		max = -1
 		feat = -1
+		mean = -1
 		
 		for i in xrange(len(self.subset[0].vector) - 1):
-			temp = self.reduce_entropy(i)
+			temp, m = self.reduce_entropy(i)
 			if temp > max:
 				max = temp
 				feat = i
+				mean = m
 		
 		self.feature = feat
+		self.mean = mean
 
 	
 	def split(self):
-		
 		#CONDITION FOR NOT SPLITTING
-		print self.std_dev
 		if len(self.subset) <= self.MIN_SIZE:
-			return
+			return 0
 
 		if not self.feature:
 			self.find_feature()
 
 		if self.reduce_entropy(self.feature) < self.THRESHOLD:
-			print self.reduce_entropy(self.feature)
-			return
-
-		total = len(self.subset)
-		mean = 0
-		for each in self.subset:
-			mean += each.vector[self.feature]
-		mean /= 1.0*total
+			return 0
 
 		left = []
 		right = []
 		count = 0
 		for each in self.subset:
-			if each.vector[self.feature] <= mean:
+			if each.vector[self.feature] <= self.mean:
 				count += 1
 				left.append(each)
 			else:
 				right.append(each)
 		self.children = [Node(left), Node(right)]
 
-	
-	def make_tree(self):
-	
-		self.split()
-		for each in self.children:
-			each.make_tree()
+		return 1
 
 
-	def predict(self, object):
-		pass
+def print_list(l):
 
-	def printme(self):
-		print self.subset
+	for each in l:
+		print each.d1_score,
+	print
+
+def printme(root):
+
+	print root.feature
+	if root.children == []:
+		print_list(root.subset)
 		print '*'*10
-		for each in self.children:
-			each.printme()
+	for each in root.children:
+		printme(each)
+
+
+def make_tree(root):
+	
+	if root.split():
+		for each in root.children:
+			make_tree(each)
+
+
+def predict(root, obj):
+
+	if root.children == []: #leaf
+		sum = 0
+		for each in root.subset:
+			sum += each.vector[-1]
+		return 1.0*sum/len(root.subset)
+
+	if obj.vector[root.feature] <= root.mean:
+		return predict(root.children[0], obj)
+	else:
+		return predict(root.children[1], obj)
+
 		
+def decision_tree(train, test):
+
+	#TRAINING
+	tree = Node(train)
+	make_tree(tree)
+
+	#TESTING
+	predictions = []
+	for each in test:
+		print each.vector[-1]
+		predictions.append(predict(tree, each))
+	return predictions
+
+
+def random_forest(train, test):
+	
+	SIZE = (3*len(train))/4
+	NO_OF_TREES = 5
+	
+	#TRAINING
+	trees = []
+	for i in xrange(NO_OF_TREES):
+		shuffle(train)
+		root = Node (train[:SIZE])
+		make_tree(root)
+		trees.append(root)
+
+	#TESTING
+	predictions = []
+	for each in test:
+		sum = 0
+		for tree in trees:
+			temp = predict(tree, each)
+			sum += temp
+		sum /= 1.0*NO_OF_TREES
+		predictions.append(sum)
+
+	return predictions
 
 
 if __name__ == "__main__":
 	if len(sys.argv) != 3:
 		print "Usage : python random_forest.py <train> <test>"
 		sys.exit(1)
-	root = Node (get_list('../data/rft'))
-	root.make_tree()
-	root.printme()
+	train = get_list(sys.argv[1])
+	test = get_list(sys.argv[2])
+	print decision_tree(train, test)
+	print random_forest(train, test)
