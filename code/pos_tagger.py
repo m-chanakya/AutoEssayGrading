@@ -296,7 +296,7 @@ if __name__ == "__main__":
 		counter +=1
 		print counter
 		each.join()
-		threads = []
+	threads = []
 	while q.empty() != True:
 		print q.get()[2:-1]
 		# result = viterbi()[2:]

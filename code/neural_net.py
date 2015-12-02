@@ -2,6 +2,7 @@
 
 import sys, math, random
 from fileparse import get_list
+import pickle
 
 #GLOBALS
 nof_hidden_units = 4
@@ -144,21 +145,31 @@ def preprocess(train):
 		else:
 			means.append(0)
 			variances.append(0)
-	print means
-	print variances
+	# print means
+	# print variances
 	return means, variances
 
 def main():
-	if len(sys.argv) !=3:
-		print "Usage: python neural_net.py <train> <test>"
+	if len(sys.argv)<3:
+		print "Usage: python neural_net.py -t|-m <train>|<model> <test>"
 		sys.exit(1)
 
+	print "\nInitializing Neural Net..."
 	#READ DATA
-	raw = get_list(sys.argv[1])
+	if sys.argv[1] == '-t':
+		raw = get_list(sys.argv[2], True)
+	elif sys.argv[1] == '-m':
+		raw = get_list(sys.argv[2], False)
+	else:
+		print "Usage: python neural_net.py -t|-m <train>|<model> <test>"
+		sys.exit(1)
+
 	train_data = [each.vector[:-1] for each in raw]
 	train_ans = [each.vector[-1:] for each in raw]
 	
-	raw = get_list(sys.argv[2])
+	print "Ready.\n"
+	print "Reading test data..."
+	raw = get_list(sys.argv[3])
 	test_data = [each.vector[:-1] for each in raw]
 	test_ans = [each.vector[-1:] for each in raw]
 

@@ -187,10 +187,21 @@ def random_forest(train, test):
 
 
 if __name__ == "__main__":
-	if len(sys.argv) != 3:
-		print "Usage : python random_forest.py <train> <test>"
+	if len(sys.argv) < 3:
+		print "Usage : python random_forest.py -t|-m <train>|<model> <test>"
 		sys.exit(1)
-	train = get_list(sys.argv[1])
-	test = get_list(sys.argv[2])
+
+	print "\nInitializing Random Forest..."
+	#READ DATA
+	if sys.argv[1] == '-t':
+		train = get_list(sys.argv[2], True)
+	elif sys.argv[1] == '-m':
+		train = get_list(sys.argv[2], False)
+	else:
+		print "Usage: python neural_net.py -t|-m <train> <test>"
+		sys.exit(1)
+	print "Ready.\n"
+	print "Reading test data..."
+	test = get_list(sys.argv[3])
 	print decision_tree(train, test)
 	print random_forest(train, test)

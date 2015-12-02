@@ -5,6 +5,7 @@ import os
 from text_rank import get_key_phrases
 from progress.bar import Bar
 from time import sleep
+import pickle
 
 Dict = enchant.Dict("en_US")
 import sys
@@ -193,8 +194,16 @@ class files:
 		"""
 		self.phrases, self.summary = get_key_phrases(self.essay)
 
+def load_model(filename):
+	f = open(filename, 'r')
+	model = pickle.load(f)
+	return model
 
-def get_list(filename):
+def save_model(filename, obj_arr):
+	f = open(filename, 'w')
+	pickle.dump(obj_arr, f)
+
+def get_list(filename, retrain=True):
 	"""
 	Creates an array of objects out of 
 	input training file
@@ -205,25 +214,35 @@ def get_list(filename):
 	==================================
 	"""
 
-	fo = open(filename)
-	lines = fo.readlines()
-	fo.close()
-	total = len(lines)
-	obj_arr = []
-	vec_arr = []
-	bar = Bar("Processing", max=total, suffix='%(percent)d%% | %(index)d of %(max)d | %(eta)d seconds remaining.')
-	num = 0
-	for each in lines:
-		send_obj = files(each.split('\n')[0].split('\t'))
-		send_obj.set_word_count(5)
-		send_obj.set_pos_features()
-		send_obj.set_punctuation_features()
-		send_obj.set_vectors()
-		send_obj.get_phrases()
-		obj_arr.append(send_obj)
+	if retrain==True:
+		fo = open(filename)
+		lines = fo.readlines()
+		fo.close()
+		total = len(lines)
+		obj_arr = []
+		vec_arr = []
+		bar = Bar("Processing", max=total, suffix='%(percent)d%% | %(index)d of %(max)d | %(eta)d seconds remaining.')
+		num = 0
+		for each in lines:
+			send_obj = files(each.split('\n')[0].split('\t'))
+			send_obj.set_word_count(5)
+			send_obj.set_pos_features()
+			send_obj.set_punctuation_features()
+			send_obj.set_vectors()
+			send_obj.get_phrases()
+			obj_arr.append(send_obj)
+			bar.next()
+		bar.finish()
+		save_model(filename+".model", obj_arr)
+		return obj_arr
+
+	elif retrain==False:
+		bar = Bar("Loading model", max=2, suffix='%(percent)d%% | %(index)d of %(max)d | %(eta)d seconds remaining.')
 		bar.next()
-	bar.finish()
-	return obj_arr
+		obj_arr = load_model(filename)
+		bar.next()
+		bar.finish()
+		return obj_arr
 
 if __name__ == "__main__":
 	arr = get_list()
