@@ -3,6 +3,7 @@
 import sys, math
 from fileparse import get_list
 from random import shuffle
+from metrics import get_average_kappa as kappa
 
 def calc_mean(l):
 	mean = float(sum(l))/len(l)
@@ -203,5 +204,14 @@ if __name__ == "__main__":
 	print "Ready.\n"
 	print "Reading test data..."
 	test = get_list(sys.argv[3])
-	print decision_tree(train, test)
-	print random_forest(train, test)
+	answers = [each.vector[-1] for each in test]
+	desc_ans = decision_tree(train, test)
+	random_forest_ans = random_forest(train, test)
+
+	kp = kappa(answers, desc_ans)
+	print "\nThe Average Quadratic Weighted Kappa obtained for Decision tree is: ", kp, "\n"
+	print "="*50
+
+	kp = kappa(answers, random_forest_ans)
+	print "\nThe Average Quadratic Weighted Kappa obtained for Random Forest is: ", kp, "\n"
+	print "="*50

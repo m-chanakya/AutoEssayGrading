@@ -3,6 +3,7 @@
 import sys, math, random
 from fileparse import get_list
 import pickle
+from metrics import get_average_kappa as kappa
 
 #GLOBALS
 nof_hidden_units = 4
@@ -172,6 +173,7 @@ def main():
 	raw = get_list(sys.argv[3])
 	test_data = [each.vector[:-1] for each in raw]
 	test_ans = [each.vector[-1:] for each in raw]
+	answers = [each.vector[-1] for each in raw]
 
 	global nof_ip_units
 	nof_ip_units = len(test_data[0])
@@ -186,9 +188,14 @@ def main():
 
 	#PREDICT
 	predictions = forward(test_data)
-
-	print test_ans
+	predictions = [each[0] for each in predictions]
+	kp = kappa(answers, predictions)
+	print answers
 	print predictions
+	print "\nThe Average Quadratic Weighted Kappa obtained is: ", kp, "\n"
+	print "="*50
+	# print test_ans
+	# print predictions
 
 if __name__ == "__main__":
 	main()
