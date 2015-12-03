@@ -199,7 +199,7 @@ if __name__ == "__main__":
 	elif sys.argv[1] == '-m':
 		train = get_list(sys.argv[2], False)
 	else:
-		print "Usage: python neural_net.py -t|-m <train> <test>"
+		print "Usage: python random_forest.py -t|-m <train> <test>"
 		sys.exit(1)
 	print "Ready.\n"
 	print "Reading test data..."
@@ -207,7 +207,10 @@ if __name__ == "__main__":
 	answers = [each.vector[-1] for each in test]
 	desc_ans = decision_tree(train, test)
 	random_forest_ans = random_forest(train, test)
-
+	ofp = open('../data/dec_ans_act', 'w')
+	ofp2 = open('../data/dec__ans_pred', 'w')
+	ofp3 = open('../data/random_act', 'w')
+	ofp4 = open('../data/random_pred', 'w')
 	kp = kappa(answers, desc_ans)
 	print "\nThe Average Quadratic Weighted Kappa obtained for Decision tree is: ", kp, "\n"
 	print "="*50
@@ -215,3 +218,7 @@ if __name__ == "__main__":
 	kp = kappa(answers, random_forest_ans)
 	print "\nThe Average Quadratic Weighted Kappa obtained for Random Forest is: ", kp, "\n"
 	print "="*50
+	ofp.write('\n'.join(answers))
+	ofp2.write('\n'.join(desc_ans))
+	ofp3.write('\n'.join(answers))
+	ofp4.write('\n'.join(random_forest_ans))
